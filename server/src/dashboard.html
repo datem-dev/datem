@@ -1,0 +1,858 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>datem dashboard</title>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --bg: #0d1117;
+    --card: #161b22;
+    --border: #30363d;
+    --text: #e6edf3;
+    --muted: #8b949e;
+    --accent: #58a6ff;
+    --green: #3fb950;
+    --green-bg: #1f4a2e;
+    --orange: #d29922;
+    --orange-bg: #3d2b0a;
+    --red: #f85149;
+    --grid-line: #21262d;
+  }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'Courier New', Courier, monospace;
+    font-size: 13px;
+    min-height: 100vh;
+  }
+
+  /* ── Header ────────────────────────────────────────────────────────────── */
+  header {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    padding: 14px 24px;
+    border-bottom: 1px solid var(--border);
+    background: var(--card);
+  }
+
+  .logo {
+    font-size: 20px;
+    font-weight: bold;
+    color: var(--accent);
+    letter-spacing: 2px;
+    flex-shrink: 0;
+  }
+
+  .header-spacer { flex: 1; }
+
+  .key-label {
+    color: var(--muted);
+    font-size: 11px;
+    margin-right: 6px;
+  }
+
+  #apiKey {
+    background: var(--bg);
+    border: 1px solid var(--border);
+    color: var(--text);
+    font-family: inherit;
+    font-size: 12px;
+    padding: 5px 10px;
+    border-radius: 4px;
+    width: 200px;
+    outline: none;
+    transition: border-color 0.15s;
+  }
+
+  #apiKey:focus { border-color: var(--accent); }
+
+  .last-updated {
+    color: var(--muted);
+    font-size: 11px;
+    flex-shrink: 0;
+    min-width: 160px;
+    text-align: right;
+  }
+
+  /* ── Main layout ────────────────────────────────────────────────────────── */
+  main {
+    padding: 24px;
+    max-width: 1400px;
+  }
+
+  section-title {
+    display: block;
+    font-size: 11px;
+    color: var(--muted);
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    margin-bottom: 12px;
+    margin-top: 28px;
+  }
+
+  /* ── Stats cards ────────────────────────────────────────────────────────── */
+  .cards {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
+    gap: 12px;
+    margin-bottom: 24px;
+  }
+
+  .card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 16px;
+  }
+
+  .card-label {
+    font-size: 11px;
+    color: var(--muted);
+    text-transform: uppercase;
+    letter-spacing: 0.8px;
+    margin-bottom: 8px;
+  }
+
+  .card-value {
+    font-size: 26px;
+    font-weight: bold;
+    color: var(--accent);
+    line-height: 1.1;
+  }
+
+  .card-sub {
+    font-size: 11px;
+    color: var(--muted);
+    margin-top: 4px;
+  }
+
+  .card-value.normal { color: var(--text); }
+
+  /* ── Chart ──────────────────────────────────────────────────────────────── */
+  .chart-wrapper {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 16px;
+    margin-bottom: 24px;
+    height: 200px;
+    position: relative;
+  }
+
+  .chart-wrapper canvas { display: block; }
+
+  .chart-placeholder {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--muted);
+    font-size: 12px;
+  }
+
+  /* ── Two-col tables ─────────────────────────────────────────────────────── */
+  .two-col {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+    margin-bottom: 24px;
+  }
+
+  @media (max-width: 900px) { .two-col { grid-template-columns: 1fr; } }
+
+  /* ── Tables ─────────────────────────────────────────────────────────────── */
+  .table-card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    overflow: hidden;
+  }
+
+  .table-header {
+    padding: 12px 16px;
+    border-bottom: 1px solid var(--border);
+    font-size: 12px;
+    color: var(--muted);
+    text-transform: uppercase;
+    letter-spacing: 0.8px;
+  }
+
+  table {
+    width: 100%;
+    border-collapse: collapse;
+  }
+
+  th {
+    padding: 8px 12px;
+    text-align: left;
+    font-size: 11px;
+    color: var(--muted);
+    border-bottom: 1px solid var(--border);
+    font-weight: normal;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+  }
+
+  td {
+    padding: 8px 12px;
+    border-bottom: 1px solid var(--border);
+    vertical-align: top;
+    font-size: 12px;
+  }
+
+  tr:last-child td { border-bottom: none; }
+
+  tr:hover td { background: rgba(255,255,255,0.02); }
+
+  .mono { font-family: inherit; }
+
+  .badge {
+    display: inline-block;
+    padding: 2px 7px;
+    border-radius: 10px;
+    font-size: 10px;
+    font-weight: bold;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+  }
+
+  .badge-active { background: var(--green-bg); color: var(--green); }
+  .badge-archived { background: var(--orange-bg); color: var(--orange); }
+  .badge-canceled { background: #2a1c1c; color: var(--red); }
+  .badge-default { background: #1c1c2a; color: var(--muted); }
+
+  .empty-row td {
+    text-align: center;
+    color: var(--muted);
+    padding: 20px;
+    font-style: italic;
+  }
+
+  .error-row td {
+    color: var(--red);
+    text-align: center;
+    padding: 12px;
+    font-size: 11px;
+  }
+
+  /* ── Plans table (full width) ────────────────────────────────────────────── */
+  .full-table-card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    overflow: hidden;
+    margin-bottom: 24px;
+  }
+
+  .charges-col {
+    color: var(--muted);
+    font-size: 11px;
+    max-width: 400px;
+    word-break: break-word;
+  }
+
+  /* ── Query section ──────────────────────────────────────────────────────── */
+  .query-card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    overflow: hidden;
+    margin-bottom: 24px;
+  }
+
+  .query-header {
+    padding: 12px 16px;
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+
+  .query-title {
+    font-size: 12px;
+    color: var(--muted);
+    text-transform: uppercase;
+    letter-spacing: 0.8px;
+    flex: 1;
+  }
+
+  .query-body {
+    padding: 16px;
+  }
+
+  #sqlInput {
+    width: 100%;
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    color: var(--text);
+    font-family: 'Courier New', Courier, monospace;
+    font-size: 12px;
+    padding: 10px 12px;
+    resize: vertical;
+    outline: none;
+    transition: border-color 0.15s;
+    display: block;
+    margin-bottom: 10px;
+    min-height: 80px;
+  }
+
+  #sqlInput:focus { border-color: var(--accent); }
+
+  .run-btn {
+    background: var(--accent);
+    color: #0d1117;
+    border: none;
+    border-radius: 4px;
+    padding: 6px 16px;
+    font-family: inherit;
+    font-size: 12px;
+    font-weight: bold;
+    cursor: pointer;
+    letter-spacing: 0.5px;
+    transition: opacity 0.15s;
+  }
+
+  .run-btn:hover { opacity: 0.85; }
+  .run-btn:disabled { opacity: 0.5; cursor: default; }
+
+  #queryStatus {
+    font-size: 11px;
+    color: var(--muted);
+    margin-left: 10px;
+  }
+
+  #queryStatus.error { color: var(--red); }
+
+  .query-results {
+    margin-top: 14px;
+    overflow-x: auto;
+  }
+
+  .query-results table {
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    overflow: hidden;
+  }
+
+  .no-rows {
+    color: var(--muted);
+    font-size: 12px;
+    font-style: italic;
+    padding: 12px 0;
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="logo">datem</div>
+  <div class="header-spacer"></div>
+  <span class="key-label">API key</span>
+  <input id="apiKey" type="text" value="dev-api-key" autocomplete="off" spellcheck="false">
+  <div class="last-updated" id="lastUpdated">never updated</div>
+</header>
+
+<main>
+
+  <!-- Stats cards -->
+  <div class="cards">
+    <div class="card">
+      <div class="card-label">Events Ingested</div>
+      <div class="card-value" id="eventsTotal">—</div>
+    </div>
+    <div class="card">
+      <div class="card-label">Ingest Rate</div>
+      <div class="card-value" id="ingestRate">—</div>
+      <div class="card-sub">events / sec</div>
+    </div>
+    <div class="card">
+      <div class="card-label">Customers</div>
+      <div class="card-value normal" id="custCount">—</div>
+    </div>
+    <div class="card">
+      <div class="card-label">Active Plans</div>
+      <div class="card-value normal" id="plansCount">—</div>
+    </div>
+    <div class="card">
+      <div class="card-label">Metrics</div>
+      <div class="card-value normal" id="metricsCount">—</div>
+    </div>
+  </div>
+
+  <!-- Chart -->
+  <div class="chart-wrapper">
+    <div class="chart-placeholder" id="chartPlaceholder">loading chart…</div>
+    <canvas id="rateChart" style="display:none"></canvas>
+  </div>
+
+  <!-- Two-column tables -->
+  <div class="two-col">
+    <!-- Metrics table -->
+    <div class="table-card">
+      <div class="table-header">Metrics</div>
+      <table>
+        <thead>
+          <tr>
+            <th>ID</th>
+            <th>Display Name</th>
+            <th>Aggregation</th>
+            <th>Status</th>
+          </tr>
+        </thead>
+        <tbody id="metricsBody">
+          <tr class="empty-row"><td colspan="4">loading…</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <!-- Customers table -->
+    <div class="table-card">
+      <div class="table-header">Customers &amp; Subscriptions</div>
+      <table>
+        <thead>
+          <tr>
+            <th>ID</th>
+            <th>Name</th>
+            <th>Plan</th>
+            <th>Sub Status</th>
+          </tr>
+        </thead>
+        <tbody id="customersBody">
+          <tr class="empty-row"><td colspan="4">loading…</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- Plans table (full width) -->
+  <div class="full-table-card">
+    <div class="table-header">Plans</div>
+    <table>
+      <thead>
+        <tr>
+          <th>Plan ID</th>
+          <th>Name</th>
+          <th>Interval</th>
+          <th>Charges</th>
+        </tr>
+      </thead>
+      <tbody id="plansBody">
+        <tr class="empty-row"><td colspan="4">loading…</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- SQL Query -->
+  <div class="query-card">
+    <div class="query-header">
+      <span class="query-title">Query</span>
+    </div>
+    <div class="query-body">
+      <textarea id="sqlInput" rows="4" spellcheck="false" autocomplete="off">SHOW TABLES</textarea>
+      <button class="run-btn" id="runQueryBtn" onclick="runQuery()">Run Query</button>
+      <span id="queryStatus"></span>
+      <div class="query-results" id="queryResults"></div>
+    </div>
+  </div>
+
+</main>
+
+<script>
+// ── Config ────────────────────────────────────────────────────────────────────
+
+const KEY_STORE = 'datem_key';
+const STATS_INTERVAL_MS = 2000;
+const TABLES_INTERVAL_MS = 5000;
+const CHART_MAX_POINTS = 60;
+
+// ── State ─────────────────────────────────────────────────────────────────────
+
+let prevEventsTotal = null;
+let prevPollTime = null;
+let rateHistory = [];       // {t, rate}
+let chart = null;
+let chartReady = false;
+
+// ── API key ───────────────────────────────────────────────────────────────────
+
+const keyInput = document.getElementById('apiKey');
+
+function getKey() {
+  return keyInput.value.trim() || 'dev-api-key';
+}
+
+// Load persisted key
+const savedKey = localStorage.getItem(KEY_STORE);
+if (savedKey) keyInput.value = savedKey;
+
+keyInput.addEventListener('input', () => {
+  localStorage.setItem(KEY_STORE, keyInput.value);
+  pollStats();
+  pollTables();
+});
+
+// ── Fetch helpers ─────────────────────────────────────────────────────────────
+
+async function apiFetch(path, auth = true) {
+  const headers = {};
+  if (auth) headers['Authorization'] = 'Bearer ' + getKey();
+  const res = await fetch(path, { headers });
+  if (!res.ok) throw new Error('error: ' + res.status);
+  return res.json();
+}
+
+function setEl(id, text) {
+  document.getElementById(id).textContent = text;
+}
+
+function fmtNum(n) {
+  return n.toLocaleString();
+}
+
+function nowStr() {
+  return new Date().toLocaleTimeString();
+}
+
+// ── Stats polling ─────────────────────────────────────────────────────────────
+
+async function pollStats() {
+  try {
+    const data = await apiFetch('/stats', false);
+
+    const now = Date.now();
+    const total = data.events_total ?? 0;
+
+    // Compute rate
+    let rate = 0;
+    if (prevEventsTotal !== null && prevPollTime !== null) {
+      const dt = (now - prevPollTime) / 1000;
+      rate = Math.max(0, (total - prevEventsTotal)) / dt;
+    }
+    prevEventsTotal = total;
+    prevPollTime = now;
+
+    // Update cards
+    setEl('eventsTotal', fmtNum(total));
+    setEl('ingestRate', rate.toFixed(1));
+    setEl('custCount', fmtNum(data.customers ?? 0));
+    setEl('plansCount', fmtNum(data.plans ?? 0));
+    setEl('metricsCount', fmtNum(data.metrics ?? 0));
+
+    // Update chart
+    rateHistory.push({ t: nowStr(), rate });
+    if (rateHistory.length > CHART_MAX_POINTS) rateHistory.shift();
+    updateChart();
+
+    document.getElementById('lastUpdated').textContent = 'updated ' + nowStr();
+  } catch (e) {
+    document.getElementById('lastUpdated').textContent = 'stats: ' + e.message;
+  }
+}
+
+// ── Chart ─────────────────────────────────────────────────────────────────────
+
+function buildChart() {
+  const canvas = document.getElementById('rateChart');
+  const placeholder = document.getElementById('chartPlaceholder');
+
+  try {
+    canvas.style.display = 'block';
+    placeholder.style.display = 'none';
+
+    chart = new Chart(canvas, {
+      type: 'line',
+      data: {
+        labels: [],
+        datasets: [{
+          label: 'events/s',
+          data: [],
+          borderColor: '#58a6ff',
+          backgroundColor: 'rgba(88,166,255,0.12)',
+          fill: true,
+          tension: 0.3,
+          pointRadius: 0,
+          borderWidth: 1.5,
+        }]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        animation: false,
+        plugins: {
+          legend: { display: false },
+          tooltip: {
+            mode: 'index',
+            intersect: false,
+            backgroundColor: '#161b22',
+            borderColor: '#30363d',
+            borderWidth: 1,
+            titleColor: '#8b949e',
+            bodyColor: '#e6edf3',
+          }
+        },
+        scales: {
+          x: {
+            ticks: { color: '#8b949e', font: { family: 'Courier New', size: 10 }, maxTicksLimit: 8 },
+            grid: { color: '#21262d' },
+            border: { color: '#30363d' },
+          },
+          y: {
+            min: 0,
+            ticks: { color: '#8b949e', font: { family: 'Courier New', size: 10 } },
+            grid: { color: '#21262d' },
+            border: { color: '#30363d' },
+          }
+        }
+      }
+    });
+    chartReady = true;
+  } catch (err) {
+    // Chart.js not available — stay graceful
+    canvas.style.display = 'none';
+    placeholder.textContent = 'chart unavailable (offline?)';
+    placeholder.style.display = 'flex';
+  }
+}
+
+function updateChart() {
+  if (!chartReady || !chart) return;
+  try {
+    chart.data.labels = rateHistory.map(p => p.t);
+    chart.data.datasets[0].data = rateHistory.map(p => p.rate);
+    chart.update('none');
+  } catch (_) {}
+}
+
+// Load Chart.js from CDN — skip gracefully on failure
+const chartScript = document.createElement('script');
+chartScript.src = 'https://cdn.jsdelivr.net/npm/chart.js@4/dist/chart.umd.min.js';
+chartScript.onload = () => { buildChart(); updateChart(); };
+chartScript.onerror = () => {
+  document.getElementById('chartPlaceholder').textContent = 'chart unavailable (offline)';
+};
+document.head.appendChild(chartScript);
+
+// ── Tables polling ────────────────────────────────────────────────────────────
+
+function badge(status) {
+  const cls = {
+    active: 'badge-active',
+    archived: 'badge-archived',
+    canceled: 'badge-canceled',
+  }[status] || 'badge-default';
+  return `<span class="badge ${cls}">${esc(status || '—')}</span>`;
+}
+
+function esc(s) {
+  return String(s ?? '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+}
+
+async function pollTables() {
+  await Promise.allSettled([
+    loadMetrics(),
+    loadCustomers(),
+    loadPlans(),
+  ]);
+}
+
+async function loadMetrics() {
+  const tbody = document.getElementById('metricsBody');
+  try {
+    const data = await apiFetch('/metrics');
+    const list = Array.isArray(data) ? data : (data.metrics || data.data || []);
+    if (list.length === 0) {
+      tbody.innerHTML = '<tr class="empty-row"><td colspan="4">no metrics</td></tr>';
+      return;
+    }
+    tbody.innerHTML = list.map(m => `
+      <tr>
+        <td class="mono">${esc(m.id)}</td>
+        <td>${esc(m.display_name || m.name || '—')}</td>
+        <td>${esc(m.aggregation || '—')}</td>
+        <td>${badge(m.status)}</td>
+      </tr>
+    `).join('');
+  } catch (e) {
+    tbody.innerHTML = `<tr class="error-row"><td colspan="4">${esc(e.message)}</td></tr>`;
+  }
+}
+
+async function loadCustomers() {
+  const tbody = document.getElementById('customersBody');
+  try {
+    const data = await apiFetch('/customers');
+    const list = Array.isArray(data) ? data : (data.customers || data.data || []);
+    if (list.length === 0) {
+      tbody.innerHTML = '<tr class="empty-row"><td colspan="4">no customers</td></tr>';
+      return;
+    }
+
+    // Fetch subscriptions in parallel
+    const subResults = await Promise.all(
+      list.map(c =>
+        apiFetch(`/customers/${encodeURIComponent(c.id)}/subscriptions`)
+          .catch(() => [])
+      )
+    );
+
+    tbody.innerHTML = list.map((c, i) => {
+      const subs = Array.isArray(subResults[i]) ? subResults[i]
+        : (subResults[i]?.subscriptions || subResults[i]?.data || []);
+      if (subs.length === 0) {
+        return `<tr>
+          <td class="mono">${esc(c.id)}</td>
+          <td>${esc(c.name || '—')}</td>
+          <td>—</td>
+          <td>—</td>
+        </tr>`;
+      }
+      return subs.map((s, si) => `<tr>
+        <td class="mono">${si === 0 ? esc(c.id) : ''}</td>
+        <td>${si === 0 ? esc(c.name || '—') : ''}</td>
+        <td class="mono">${esc(s.plan_id || '—')}</td>
+        <td>${badge(s.status)}</td>
+      </tr>`).join('');
+    }).join('');
+  } catch (e) {
+    tbody.innerHTML = `<tr class="error-row"><td colspan="4">${esc(e.message)}</td></tr>`;
+  }
+}
+
+function summarizeCharges(charges) {
+  if (!charges || charges.length === 0) return '—';
+  return charges.map(ch => {
+    const type = ch.charge_type || ch.type || '';
+    const metric = ch.metric_id || ch.metric || '';
+    const price = ch.unit_price ?? ch.amount ?? '';
+    const priceStr = price !== '' ? `$${Number(price).toFixed(2)}` : '';
+    switch (type) {
+      case 'flat':
+        return `flat ${priceStr}`;
+      case 'per_unit':
+        return `per_unit ${esc(metric)} ${priceStr}/unit`;
+      case 'tiered': {
+        const n = Array.isArray(ch.tiers) ? ch.tiers.length : '?';
+        return `tiered ${esc(metric)} (${n} tiers)`;
+      }
+      case 'package': {
+        const pkg = ch.package_size ?? '?';
+        return `package ${esc(metric)} ${pkg}/${priceStr}`;
+      }
+      case 'hybrid':
+        return `hybrid ${esc(metric)}`;
+      default:
+        return esc(type || '?');
+    }
+  }).join(' · ');
+}
+
+async function loadPlans() {
+  const tbody = document.getElementById('plansBody');
+  try {
+    const data = await apiFetch('/plans');
+    const list = Array.isArray(data) ? data : (data.plans || data.data || []);
+    if (list.length === 0) {
+      tbody.innerHTML = '<tr class="empty-row"><td colspan="4">no plans</td></tr>';
+      return;
+    }
+    tbody.innerHTML = list.map(p => `
+      <tr>
+        <td class="mono">${esc(p.id)}</td>
+        <td>${esc(p.name || '—')}</td>
+        <td>${esc(p.interval || '—')}</td>
+        <td class="charges-col">${summarizeCharges(p.charges)}</td>
+      </tr>
+    `).join('');
+  } catch (e) {
+    tbody.innerHTML = `<tr class="error-row"><td colspan="4">${esc(e.message)}</td></tr>`;
+  }
+}
+
+// ── Bootstrap ─────────────────────────────────────────────────────────────────
+
+pollStats();
+pollTables();
+setInterval(pollStats, STATS_INTERVAL_MS);
+setInterval(pollTables, TABLES_INTERVAL_MS);
+
+// ── SQL Query ─────────────────────────────────────────────────────────────────
+
+async function runQuery() {
+  const btn = document.getElementById('runQueryBtn');
+  const statusEl = document.getElementById('queryStatus');
+  const resultsEl = document.getElementById('queryResults');
+  const sql = document.getElementById('sqlInput').value.trim();
+
+  if (!sql) {
+    statusEl.className = 'error';
+    statusEl.textContent = 'enter a query first';
+    return;
+  }
+
+  btn.disabled = true;
+  statusEl.className = '';
+  statusEl.textContent = 'Running…';
+  resultsEl.innerHTML = '';
+
+  try {
+    const res = await fetch('/query', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': 'Bearer ' + getKey(),
+      },
+      body: JSON.stringify({ sql }),
+    });
+
+    const data = await res.json();
+
+    if (!res.ok) {
+      const msg = data?.error?.message || data?.error?.code || 'query failed';
+      statusEl.className = 'error';
+      statusEl.textContent = msg;
+      return;
+    }
+
+    const { columns, rows, row_count } = data;
+    statusEl.className = '';
+    statusEl.textContent = row_count + ' row' + (row_count === 1 ? '' : 's');
+
+    if (!columns || columns.length === 0 || row_count === 0) {
+      resultsEl.innerHTML = '<div class="no-rows">No rows returned.</div>';
+      return;
+    }
+
+    const thead = '<thead><tr>' + columns.map(c => `<th>${esc(c)}</th>`).join('') + '</tr></thead>';
+    const tbody = '<tbody>' + rows.map(row =>
+      '<tr>' + row.map(cell => {
+        if (cell === null || cell === undefined) return '<td><span style="color:var(--muted)">null</span></td>';
+        return `<td>${esc(String(cell))}</td>`;
+      }).join('') + '</tr>'
+    ).join('') + '</tbody>';
+
+    resultsEl.innerHTML = '<table>' + thead + tbody + '</table>';
+  } catch (e) {
+    statusEl.className = 'error';
+    statusEl.textContent = e.message || 'network error';
+  } finally {
+    btn.disabled = false;
+  }
+}
+
+// Allow Ctrl+Enter / Cmd+Enter to run
+document.getElementById('sqlInput').addEventListener('keydown', function(e) {
+  if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) {
+    e.preventDefault();
+    runQuery();
+  }
+});
+</script>
+</body>
+</html>

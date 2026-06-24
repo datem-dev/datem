@@ -1,0 +1,27 @@
+[package]
+name = "datem-core"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+anyhow = { workspace = true }
+thiserror = { workspace = true }
+serde = { workspace = true }
+serde_json = { workspace = true }
+tokio = { workspace = true }
+tracing = { workspace = true }
+ulid = { workspace = true }
+reqwest = { workspace = true }
+openssl = { workspace = true }
+
+# Storage — Tonbo on S3 via fusio
+tonbo = "0.4.0-a1"
+typed-arrow = "0.6"
+fusio = { version = "0.6", features = ["aws"] }
+
+# Query — DataFusion over Tonbo RecordBatches
+# NOTE: typed-arrow 0.6 uses arrow 57; datafusion 46 uses arrow 54.
+# These coexist in the dep tree but types cannot cross the boundary.
+# Resolve when wiring the query layer in step 8.
+datafusion = "46"
+arrow = "54"
