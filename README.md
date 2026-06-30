@@ -1,19 +1,21 @@
 <div align="center">
-  <img src="assets/logo.svg" alt="datem" width="520"/>
+  <img src="assets/logo.png" alt="datem" width="520"/>
 </div>
 
 <br>
 
-> **⚠️ Alpha — vibe coded to explore the API surface.**
-> This project was built to test ideas around usage metering and billing APIs. It is not production-ready. Expect breaking changes, missing features, and rough edges.
-
-> Usage metering, product analytics, and billing on your S3 bucket.
+> **Warning: Experimental**
+>
+> This repository is experimental and is not ready for production use. We are exploring a variety of ideas, behavior, interfaces and implementation details may change without notice.
+> 
 
 [![crates.io](https://img.shields.io/crates/v/datem.svg)](https://crates.io/crates/datem)
 [![license](https://img.shields.io/badge/license-Apache--2.0-blue.svg)](LICENSE)
 [![status: alpha](https://img.shields.io/badge/status-alpha-orange.svg)]()
 
-Datem is a single Rust binary that turns an S3 bucket into a complete usage metering, analytics, and billing platform. No Kafka. No ClickHouse. No Postgres. One process, one bucket.
+Datem is a single Rust binary that turns an S3 bucket into a complete usage metering, analytics, and billing platform. No Kafka. No 
+
+Most companies are moving to usage based billing with AI credits, API calls. There is no need to build your own ingestion engine to track analytics for customers and for billing. Instead use the same method to track and bill. 
 
 ---
 
