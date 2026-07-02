@@ -14,7 +14,7 @@ use datem_core::{config::Config, db::DbHandle};
 use datem_core::db::tables::events::Event;
 use super::{
     AppState, ExistenceCache, IngestStats, auth,
-    billing_runs, customers, dashboard, ingest, invoices, metrics, plans, query, stats, subscriptions, webhooks,
+    billing_runs, customers, ingest, invoices, metrics, plans, query, stats, subscriptions, webhooks,
 };
 
 pub async fn run(config: Config) -> Result<()> {
@@ -74,7 +74,6 @@ pub async fn run(config: Config) -> Result<()> {
         .route("/webhooks/stripe", post(webhooks::handle_stripe))
         .route("/health", get(|| async { axum::http::StatusCode::OK }))
         .route("/stats", get(stats::handler))
-        .route("/dashboard", get(dashboard::handler))
         .with_state(state);
 
     let addr = SocketAddr::from(([0, 0, 0, 0], config.port));

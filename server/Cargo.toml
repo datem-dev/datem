@@ -7,6 +7,14 @@ edition = "2021"
 name = "datem"
 path = "src/main.rs"
 
+[[bin]]
+name = "dashboard"
+path = "src/bin/dashboard.rs"
+
+[[bin]]
+name = "bench"
+path = "src/bin/bench.rs"
+
 [dependencies]
 datem-core = { path = "../core" }
 
@@ -17,6 +25,7 @@ tokio = { workspace = true }
 tracing = { workspace = true }
 tracing-subscriber = { workspace = true }
 reqwest = { workspace = true }
+clap = { workspace = true }
 
 ulid = { workspace = true }
 axum = { version = "0.8", features = ["macros"] }

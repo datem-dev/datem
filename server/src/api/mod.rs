@@ -2,7 +2,6 @@ pub mod auth;
 pub mod error;
 pub mod billing_runs;
 pub mod customers;
-pub mod dashboard;
 pub mod ingest;
 pub mod invoices;
 pub mod metrics;
