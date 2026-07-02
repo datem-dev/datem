@@ -1,0 +1,306 @@
+---
+import Layout from '../layouts/Layout.astro';
+import AnnouncementBar from '../components/AnnouncementBar.astro';
+import Nav from '../components/Nav.astro';
+import Footer from '../components/Footer.astro';
+
+const meters = [
+  { name: 'tokens.output', kind: 'sum', desc: 'llm output tokens, per model' },
+  { name: 'api.requests', kind: 'count', desc: 'calls, split by route or tier' },
+  { name: 'storage.gb_mo', kind: 'gauge', desc: 'gb-months of data at rest' },
+  { name: 'seats.active', kind: 'max', desc: 'active users per billing cycle' },
+  { name: 'compute.minutes', kind: 'sum', desc: 'job runtime, per machine type' },
+  { name: 'events.custom', kind: 'any', desc: 'anything you can put a number on', faint: true },
+];
+
+const scaleRows = [
+  { capability: 'events metered', how: 'appended straight to your object storage', ceiling: 'unlimited' },
+  { capability: 'ingest throughput', how: 'stateless, horizontally sharded workers', ceiling: 'unlimited' },
+  { capability: 'meters per account', how: 'stored as objects in your s3 bucket', ceiling: 'unlimited' },
+  { capability: 'invoicing', how: 'scheduled job syncs totals to stripe', ceiling: 'configurable' },
+  { capability: 'event history', how: 'retained in your s3 bucket, forever', ceiling: 'unlimited' },
+];
+
+const plans = [
+  {
+    name: 'self-hosted',
+    price: 'free',
+    tagline: 'run it in your own vpc',
+    features: ['open-source core', 'your data never leaves', 'community support'],
+  },
+  {
+    name: 'scale',
+    badge: 'popular',
+    price: 'usage-based',
+    tagline: 'pricing in progress — talk to us',
+    features: ['real-time balances', '18-month retention', 'sso + audit log'],
+    highlighted: true,
+  },
+  {
+    name: 'enterprise',
+    price: 'custom',
+    tagline: 'dedicated infrastructure',
+    features: ['on-prem / vpc deploy', 'custom slas', 'solutions engineering'],
+  },
+];
+---
+<Layout title="datem — meter every event">
+  <div class="lp" data-screen-label="datem landing">
+    <AnnouncementBar />
+    <Nav />
+
+    <section class="hero">
+      <h1>meter every event</h1>
+      <p>usage-based billing built on object storage:<br />exact to the cent, replay-safe, and audited forever.</p>
+      <div class="hero-cta">
+        <span class="btn-solid">sign up</span>
+        <span class="btn-outline">talk to us</span>
+        <a class="btn-link" href="/docs/">view the docs →</a>
+      </div>
+    </section>
+
+    <section class="diagram">
+      <pre>{`     your app              datem · metering engine              your stack
+  +-------------+       +----------------------------+       +--------------+
+  | emit a usage|       | ingest    `}<span class="accent">&gt;</span>{` idempotent     |       | stripe       |
+  | event when  | ----> | aggregate `}<span class="accent">&gt;</span>{` exact to the ¢ | ----> | netsuite     |
+  | it happens  |       | balance   `}<span class="accent">&gt;</span>{` updates live   |       | your ledger  |
+  +-------------+       +-------------+--------------+       +--------------+
+                                      |
+                                      `}<span class="accent">v</span>{`  every raw event, retained
+                             +----------------+
+                             | your s3 bucket |   audited forever · exact `}<span class="accent">¢</span>{`
+                             +----------------+`}</pre>
+    </section>
+
+    <section class="scale-line">
+      <p>
+        every event is <strong>idempotent</strong>, <strong>replay-safe</strong>, and <strong>audited forever</strong> in your own object storage
+      </p>
+    </section>
+
+    <section class="meters">
+      <div class="eyebrow">meters</div>
+      <h2>meter anything you can name</h2>
+      <p class="lede">define a meter, pick how it aggregates, send events. datem rolls them up against whatever pricing model you attach.</p>
+      <div class="meter-grid">
+        {meters.map((m) => (
+          <div class="meter-card">
+            <div class="meter-head">
+              <div class="meter-name">{m.name}</div>
+              <span class:list={["meter-kind", { faint: m.faint }]}>{m.kind}</span>
+            </div>
+            <div class="meter-desc">{m.desc}</div>
+          </div>
+        ))}
+      </div>
+    </section>
+
+    <section class="code-section">
+      <div class="code-grid">
+        <div class="code-copy">
+          <h3>one call to record usage</h3>
+          <p>send an event the moment it happens. datem handles idempotency, late arrivals, and aggregation against whatever pricing model you define.</p>
+          <div class="steps">
+            <div class="step"><span class="num">01</span><span>idempotent ingestion — replay safe by default</span></div>
+            <div class="step"><span class="num">02</span><span>sub-second aggregation across millions of events</span></div>
+            <div class="step"><span class="num">03</span><span>push to stripe, netsuite, or your own ledger</span></div>
+          </div>
+        </div>
+        <div class="code-block">
+          <div class="dots"><span class="dot on"></span><span class="dot"></span><span class="dot"></span></div>
+          <div><span class="comment">// record a usage event</span></div>
+          <div><span class="kw">await</span> datem.usage.<span class="fn">record</span>({`{`}</div>
+          <div>&nbsp;&nbsp;customer: <span class="str">"cus_8Fq2k"</span>,</div>
+          <div>&nbsp;&nbsp;meter:&nbsp;&nbsp;&nbsp;&nbsp;<span class="str">"tokens.output"</span>,</div>
+          <div>&nbsp;&nbsp;value:&nbsp;&nbsp;&nbsp;&nbsp;<span class="kw">14820</span>,</div>
+          <div>&nbsp;&nbsp;ts:&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Date.<span class="fn">now</span>(),</div>
+          <div>&nbsp;&nbsp;idempotency_key: <span class="str">"req_91c…"</span></div>
+          <div>{`});`}</div>
+          <div class="comment-line"><span class="comment">// 202 accepted, aggregated in 240ms</span></div>
+        </div>
+      </div>
+    </section>
+
+    <section class="scale-table">
+      <div class="eyebrow">scale</div>
+      <h2>built to outgrow you</h2>
+      <div class="table">
+        <div class="row header">
+          <div>capability</div><div>how it works</div><div>ceiling</div>
+        </div>
+        {scaleRows.map((r) => (
+          <div class="row">
+            <div class="cap">{r.capability}</div><div class="how">{r.how}</div><div class="ceiling">{r.ceiling}</div>
+          </div>
+        ))}
+      </div>
+    </section>
+
+    <section class="oss">
+      <div class="oss-border">
+        <div class="oss-grid">
+          <div class="oss-copy">
+            <div class="eyebrow">open source</div>
+            <h2>inspect the engine. run it yourself.</h2>
+            <p>the core ingest and aggregation engine is apache-2.0. read the code, audit how every cent is computed, or self-host the whole thing in your own vpc.</p>
+            <div class="oss-cta">
+              <span class="btn-solid gh">
+                <svg width="15" height="15" viewBox="0 0 16 16" fill="#F7F8F9"><path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.01 8.01 0 0016 8c0-4.42-3.58-8-8-8z"/></svg>
+                view on github
+              </span>
+              <span class="btn-outline">self-host guide →</span>
+            </div>
+          </div>
+          <div class="oss-panel">
+            <div class="repo-card">
+              <div class="repo-head">
+                <svg width="17" height="17" viewBox="0 0 16 16" fill="#14161A"><path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.01 8.01 0 0016 8c0-4.42-3.58-8-8-8z"/></svg>
+                <span class="repo-name">datem-dev/datem</span>
+                <span class="repo-license">apache-2.0</span>
+              </div>
+              <div class="repo-term">
+                <div class="dim">$ git clone github.com/datem-dev/datem</div>
+                <div class="dim">$ docker compose up</div>
+                <div><span class="accent">→</span> metering engine live on :8080</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="pricing">
+      <h2>plans</h2>
+      <div class="plan-grid">
+        {plans.map((p) => (
+          <div class:list={["plan", { highlighted: p.highlighted }]}>
+            {p.highlighted && <div class="plan-stripe"></div>}
+            <div class="plan-name-row">
+              <span class="plan-name">{p.name}</span>
+              {p.badge && <span class="plan-badge">{p.badge}</span>}
+            </div>
+            <div class="plan-price">{p.price}</div>
+            <div class="plan-tagline">{p.tagline}</div>
+            <div class="plan-features">
+              {p.features.map((f) => <span>{f}</span>)}
+            </div>
+          </div>
+        ))}
+      </div>
+    </section>
+
+    <section class="cta">
+      <h2>usage in. invoices out.</h2>
+      <p>wire up your first meter in an afternoon. send us an event and watch the invoice build itself.</p>
+      <div class="cta-buttons">
+        <span class="btn-solid accent-bg">sign up</span>
+        <span class="btn-outline dark">talk to us</span>
+      </div>
+    </section>
+
+    <Footer />
+  </div>
+</Layout>
+
+<style>
+  .lp { font-family: var(--dm-font-sans); background: var(--dm-paper); color: var(--dm-ink); }
+
+  .hero { padding: 76px 40px 8px; text-align: center; max-width: 1180px; margin: 0 auto; }
+  .hero h1 { font-family: var(--dm-font-mono); font-size: 58px; line-height: 1.02; letter-spacing: -.03em; font-weight: 600; margin: 0; }
+  .hero p { font-size: 18px; line-height: 1.55; color: var(--dm-muted); max-width: 540px; margin: 22px auto 0; font-weight: 400; }
+  .hero-cta { display: flex; gap: 11px; justify-content: center; margin-top: 30px; font-family: var(--dm-font-mono); font-size: 14px; font-weight: 500; }
+
+  .btn-solid { background: var(--dm-ink); color: var(--dm-paper); padding: 11px 20px; border-radius: 6px; cursor: pointer; }
+  .btn-solid.accent-bg { background: var(--dm-accent); }
+  .btn-outline { border: 1px solid var(--dm-border); padding: 11px 20px; border-radius: 6px; color: var(--dm-ink); cursor: pointer; }
+  .btn-outline.dark { border-color: var(--dm-dark-border); color: var(--dm-paper); }
+  .btn-link { padding: 11px 14px; color: var(--dm-accent); text-decoration: none; }
+
+  .diagram { padding: 40px 20px 12px; display: flex; flex-direction: column; align-items: center; overflow-x: auto; }
+  .diagram pre { font-family: var(--dm-font-mono); font-size: 13px; line-height: 1.6; color: #3A3F47; white-space: pre; margin: 0; }
+  .accent { color: var(--dm-accent); }
+
+  .scale-line { padding: 14px 40px 40px; text-align: center; }
+  .scale-line p { font-family: var(--dm-font-mono); font-size: 14px; color: var(--dm-muted); margin: 0; }
+  .scale-line strong { color: var(--dm-ink); font-weight: 600; }
+
+  .eyebrow { font-family: var(--dm-font-mono); font-size: 12px; letter-spacing: .06em; color: var(--dm-accent); text-transform: uppercase; margin-bottom: 8px; }
+
+  .meters { max-width: 1100px; margin: 0 auto; padding: 62px 40px; border-top: 1px solid var(--dm-border); }
+  .meters h2 { font-family: var(--dm-font-mono); font-size: 28px; letter-spacing: -.02em; font-weight: 600; margin: 0; }
+  .lede { font-size: 15px; line-height: 1.6; color: var(--dm-muted); margin-top: 12px; max-width: 520px; }
+  .meter-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; margin-top: 30px; }
+  .meter-card { border: 1px solid var(--dm-border); border-radius: 8px; background: var(--dm-white); padding: 20px 22px; }
+  .meter-head { display: flex; justify-content: space-between; align-items: center; }
+  .meter-name { font-family: var(--dm-font-mono); font-size: 14px; font-weight: 600; color: var(--dm-ink); }
+  .meter-kind { font-family: var(--dm-font-mono); font-size: 10px; letter-spacing: .08em; color: var(--dm-accent); text-transform: uppercase; }
+  .meter-kind.faint { color: var(--dm-faint); }
+  .meter-desc { font-size: 13.5px; color: var(--dm-muted); margin-top: 9px; line-height: 1.5; }
+
+  .code-section { max-width: 1100px; margin: 0 auto; padding: 0 40px 62px; }
+  .code-grid { display: grid; grid-template-columns: 1fr 1.1fr; border: 1px solid var(--dm-border); border-radius: 10px; overflow: hidden; }
+  .code-copy { padding: 40px 36px; border-right: 1px solid var(--dm-border); background: var(--dm-white); }
+  .code-copy h3 { font-family: var(--dm-font-mono); font-size: 22px; letter-spacing: -.02em; font-weight: 600; line-height: 1.2; margin: 0; }
+  .code-copy p { font-size: 15px; line-height: 1.6; color: var(--dm-muted); margin-top: 14px; max-width: 360px; }
+  .steps { margin-top: 26px; display: flex; flex-direction: column; gap: 14px; }
+  .step { display: flex; gap: 12px; }
+  .step .num { font-family: var(--dm-font-mono); font-size: 12px; color: var(--dm-accent); }
+  .step span:last-child { font-size: 14.5px; }
+
+  .code-block { background: var(--dm-ink); padding: 36px 40px; color: var(--dm-dark-text); font-family: var(--dm-font-mono); font-size: 13.5px; line-height: 1.95; }
+  .dots { display: flex; gap: 8px; margin-bottom: 20px; }
+  .dot { width: 10px; height: 10px; border-radius: 50%; background: var(--dm-dark-border); display: inline-block; }
+  .dot.on { background: var(--dm-accent); }
+  .comment, .comment-line .comment { color: var(--dm-dark-comment); }
+  .kw { color: #E0925A; }
+  .fn { color: #8FB8A0; }
+  .str { color: #A8C8E0; }
+  .comment-line { margin-top: 16px; }
+
+  .scale-table { max-width: 1100px; margin: 0 auto; padding: 0 40px 62px; }
+  .scale-table h2 { font-family: var(--dm-font-mono); font-size: 28px; letter-spacing: -.02em; font-weight: 600; margin: 0; }
+  .table { margin-top: 26px; border: 1px solid var(--dm-border); border-radius: 10px; overflow: hidden; font-family: var(--dm-font-mono); font-size: 13.5px; background: var(--dm-white); }
+  .row { display: grid; grid-template-columns: 1.3fr 2fr 0.85fr; border-bottom: 1px solid var(--dm-border-soft); }
+  .row:last-child { border-bottom: none; }
+  .row.header { background: var(--dm-off-white); border-bottom: 1px solid var(--dm-border); color: var(--dm-muted); }
+  .row > div { padding: 13px 22px; }
+  .row .cap { font-weight: 600; }
+  .row .how { color: var(--dm-muted); }
+  .row .ceiling { font-weight: 500; }
+
+  .oss { max-width: 1100px; margin: 0 auto; padding: 0 40px 62px; }
+  .oss-border { border-radius: 11px; padding: 1.5px; background: linear-gradient(120deg, var(--dm-accent), var(--dm-accent-soft) 38%, var(--dm-border) 70%); }
+  .oss-grid { border-radius: 10px; overflow: hidden; display: grid; grid-template-columns: 1.1fr 1fr; background: var(--dm-white); }
+  .oss-copy { padding: 40px 36px; border-right: 1px solid var(--dm-border); background: var(--dm-white); }
+  .oss-copy h2 { font-family: var(--dm-font-mono); font-size: 24px; font-weight: 600; letter-spacing: -.02em; line-height: 1.18; max-width: 380px; margin: 0; }
+  .oss-copy p { font-size: 15px; line-height: 1.6; color: var(--dm-muted); margin-top: 14px; max-width: 380px; }
+  .oss-cta { display: flex; gap: 11px; margin-top: 26px; font-family: var(--dm-font-mono); font-size: 13.5px; font-weight: 500; }
+  .btn-solid.gh { display: flex; align-items: center; gap: 8px; padding: 11px 18px; }
+  .oss-panel { padding: 36px; display: flex; flex-direction: column; justify-content: center; background: var(--dm-off-white); }
+  .repo-card { border: 1px solid var(--dm-border); border-radius: 8px; background: var(--dm-white); overflow: hidden; }
+  .repo-head { display: flex; align-items: center; gap: 10px; padding: 14px 18px; border-bottom: 1px solid var(--dm-border); }
+  .repo-name { font-family: var(--dm-font-mono); font-size: 13px; }
+  .repo-license { margin-left: auto; font-family: var(--dm-font-mono); font-size: 12px; color: var(--dm-faint); }
+  .repo-term { padding: 18px; font-family: var(--dm-font-mono); font-size: 13px; color: var(--dm-ink); line-height: 1.85; }
+  .repo-term .dim { color: var(--dm-faint); }
+
+  .pricing { max-width: 1100px; margin: 0 auto; padding: 0 40px 62px; }
+  .pricing h2 { font-family: var(--dm-font-mono); font-size: 28px; font-weight: 600; letter-spacing: -.02em; margin: 0; }
+  .plan-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 0; margin-top: 26px; border: 1px solid var(--dm-border); border-radius: 10px; overflow: hidden; background: var(--dm-white); }
+  .plan { padding: 30px; border-right: 1px solid var(--dm-border); position: relative; }
+  .plan:last-child { border-right: none; }
+  .plan.highlighted { background: var(--dm-accent-tint); }
+  .plan-stripe { position: absolute; top: 0; left: 0; right: 0; height: 3px; background: var(--dm-accent); }
+  .plan-name-row { display: flex; align-items: center; gap: 8px; }
+  .plan-name { font-family: var(--dm-font-mono); font-weight: 600; font-size: 15px; }
+  .plan-badge { font-family: var(--dm-font-mono); font-size: 10px; color: var(--dm-accent); border: 1px solid var(--dm-accent-border); padding: 2px 6px; border-radius: 4px; }
+  .plan-price { font-family: var(--dm-font-mono); font-size: 30px; font-weight: 600; margin-top: 12px; letter-spacing: -.02em; }
+  .plan-tagline { font-size: 13px; color: var(--dm-faint); margin-top: 4px; }
+  .plan-features { margin-top: 20px; display: flex; flex-direction: column; gap: 10px; font-size: 13.5px; color: var(--dm-muted); }
+
+  .cta { background: var(--dm-ink); color: var(--dm-paper); padding: 72px 40px; text-align: center; }
+  .cta h2 { font-family: var(--dm-font-mono); font-size: 38px; font-weight: 600; letter-spacing: -.025em; margin: 0; }
+  .cta p { color: var(--dm-faint); font-size: 15.5px; margin-top: 14px; max-width: 420px; margin-left: auto; margin-right: auto; }
+  .cta-buttons { display: flex; gap: 11px; justify-content: center; margin-top: 28px; font-family: var(--dm-font-mono); font-size: 14px; font-weight: 500; }
+</style>

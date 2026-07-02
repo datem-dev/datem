@@ -1,0 +1,56 @@
+@import './tokens.css';
+
+:root {
+  --sl-font: var(--dm-font-sans);
+  --sl-font-mono: var(--dm-font-mono);
+
+  --sl-color-accent-low: var(--dm-accent-tint);
+  --sl-color-accent: var(--dm-accent);
+  --sl-color-accent-high: #7A2C11;
+
+  --sl-color-white: var(--dm-ink);
+  --sl-color-gray-1: #1D2026;
+  --sl-color-gray-2: #363B43;
+  --sl-color-gray-3: var(--dm-faint);
+  --sl-color-gray-4: var(--dm-border);
+  --sl-color-gray-5: var(--dm-border-soft);
+  --sl-color-gray-6: var(--dm-off-white);
+  --sl-color-black: var(--dm-paper);
+
+  --sl-color-bg: var(--dm-paper);
+  --sl-color-bg-nav: var(--dm-white);
+  --sl-color-bg-sidebar: var(--dm-white);
+}
+
+:root[data-theme='dark'] {
+  --sl-color-accent-low: #3A2213;
+  --sl-color-accent: var(--dm-accent-soft);
+  --sl-color-accent-high: #F7CBA8;
+
+  --sl-color-white: var(--dm-paper);
+  --sl-color-gray-1: var(--dm-border-soft);
+  --sl-color-gray-2: var(--dm-dark-text);
+  --sl-color-gray-3: var(--dm-faint);
+  --sl-color-gray-4: var(--dm-dark-border);
+  --sl-color-gray-5: #22262D;
+  --sl-color-gray-6: #1B1E24;
+  --sl-color-black: var(--dm-ink);
+
+  --sl-color-bg: var(--dm-ink);
+  --sl-color-bg-nav: var(--dm-ink);
+  --sl-color-bg-sidebar: var(--dm-ink);
+}
+
+/* headings use the same monospace treatment as the landing page */
+.sl-markdown-content h1,
+.sl-markdown-content h2,
+.sl-markdown-content h3,
+.sl-markdown-content h4 {
+  font-family: var(--dm-font-mono);
+  letter-spacing: -0.02em;
+  font-weight: 600;
+}
+
+site-search {
+  --sl-color-accent: var(--dm-accent);
+}

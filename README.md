@@ -229,6 +229,47 @@ curl -s -X POST http://localhost:3000/query \
 
 ---
 
+## Debug Dashboard
+
+The web dashboard (live stats, tables, and an ad hoc SQL query box) is a debugging aid, not part of the production server binary. Run it as a separate process — it proxies its API calls to a running `datem` server:
+
+```bash
+DATEM_API_URL=http://localhost:3000 DASHBOARD_PORT=4000 cargo run --bin dashboard
+```
+
+Then open `http://localhost:4000`. It defaults to proxying `http://localhost:3000` on port `4000` if those env vars are omitted.
+
+---
+
+## Benchmarking
+
+Two tools are available for load testing:
+
+- **`scripts/stress.sh`** — a zero-build bash/curl smoke test, good for a quick check against any running instance (even without a Rust toolchain):
+
+  ```bash
+  ./scripts/seed.sh http://localhost:3000 dev-api-key   # populate fixture data
+  ./scripts/stress.sh http://localhost:3000 dev-api-key 20 60
+  ```
+
+- **`bin/bench`** — a proper Rust load generator with configurable concurrency, duration, and workload mix (`health`, `metrics`, `metrics-get-one`, `ingest-one`, `ingest-batch`, `query`, or `mixed`), reporting p50/p95/p99 latency and req/s per endpoint:
+
+  ```bash
+  cargo run --release --bin bench -- \
+    --api-url http://localhost:3000 --api-key dev-api-key \
+    --workload mixed --concurrency 10 --duration-secs 30
+  ```
+
+  `scripts/benchmark-db.sh` runs `bin/bench` through a standard suite of scenarios (concurrency sweep, ingest batch-size sweep, read-heavy vs. write-heavy) and writes a combined JSON report to `bench-results/`:
+
+  ```bash
+  ./scripts/benchmark-db.sh http://localhost:3000 dev-api-key 30
+  ```
+
+  Both require `scripts/seed.sh` to have been run first so the default fixture data (`api_calls` metric, `cust_acme` customer) exists.
+
+---
+
 ## Auth
 
 Datem uses a single operator bearer token (`DATEM_API_KEY`) — it authenticates your backend to datem, not your end customers. Your app resolves the caller's identity through your own auth system, then passes `customer_id` explicitly in each event:
